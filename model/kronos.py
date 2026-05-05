@@ -267,7 +267,9 @@ class Kronos(nn.Module, PyTorchModelHubMixin):
         if use_teacher_forcing:
             sibling_embed = self.embedding.emb_s1(s1_targets)
         else:
-            s1_probs = F.softmax(s1_logits.detach(), dim=-1)
+            # Sampling stays in FP32 even under autocast so the stochastic
+            # path is invariant to the surrounding precision policy.
+            s1_probs = F.softmax(s1_logits.detach().float(), dim=-1)
             sample_s1_ids = torch.multinomial(s1_probs.view(-1, self.s1_vocab_size), 1).view(s1_ids.shape)
             sibling_embed = self.embedding.emb_s1(sample_s1_ids)
 
