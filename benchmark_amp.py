@@ -59,8 +59,14 @@ def _build_inputs(batch_size: int, seq_len: int, device: torch.device, seed: int
     # Synthetic OHLCV-shaped input: 6 feature columns matching Kronos's d_in.
     # Values are ~N(0, 1); the tokenizer's z-score normalisation expects this.
     batch_x = torch.randn(batch_size, seq_len, 6, generator=g).to(device, non_blocking=True)
-    # Time-feature stamps: integer codes (minute/hour/weekday/day/month).
-    batch_x_stamp = torch.randint(0, 12, (batch_size, seq_len, 5), generator=g).to(device, non_blocking=True)
+    # Time-feature stamps: per-column ranges must respect TemporalEmbedding's
+    # embedding sizes (minute=60, hour=24, weekday=7, day=32, month=13).
+    minute = torch.randint(0, 60, (batch_size, seq_len, 1), generator=g)
+    hour = torch.randint(0, 24, (batch_size, seq_len, 1), generator=g)
+    weekday = torch.randint(0, 7, (batch_size, seq_len, 1), generator=g)
+    day = torch.randint(0, 32, (batch_size, seq_len, 1), generator=g)
+    month = torch.randint(0, 13, (batch_size, seq_len, 1), generator=g)
+    batch_x_stamp = torch.cat([minute, hour, weekday, day, month], dim=2).to(device, non_blocking=True)
     return batch_x, batch_x_stamp
 
 
